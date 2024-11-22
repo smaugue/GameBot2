@@ -68,5 +68,15 @@
     "deletion_cancelled": "Deletion cancelled.",
     "deletion_invalid_command": "Unrecognized command. Deletion cancelled.",
     "cancel_button_label": "Cancel",
+    "clear_success": "The last {amount} messages were successfully deleted.",
+    "clear_invalid_amount": "Please enter a valid integer for the number of messages to delete.",
+    "clear_not_found": "Unable to find messages to delete.",
+    "automod_channel_updated": "The AutoMod channel has been updated: <#{old_channel}> → <#{new_channel}>.",
+    "automod_channel_set": "The AutoMod channel has been set to <#{channel}>.",
+    "automod_level_updated": "The AutoMod sensitivity level has been updated: {old_level} → {new_level}.",
+    "automod_level_set": "The AutoMod sensitivity level has been set to {level}.",
+    "language_updated": "The guild language has been updated: {old_lang} → {new_lang}.",
+    "language_set": "The guild language has been set to {lang}.",
+    "error.insufficient_permissions": "The interaction was explicitly denied because you lack the necessary permissions.",
     "": ""
 }

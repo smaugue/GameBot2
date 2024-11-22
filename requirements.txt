@@ -1,0 +1,8 @@
+discord
+pytz
+gtts
+python-Levenshtein
+yt_dlp
+spotipy
+ffmpeg
+pynacl

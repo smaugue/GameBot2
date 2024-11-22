@@ -1,3 +1,4 @@
-VERSION = "2.0.0"
-DATE = "9/11/2024"
-PATCH = "Initialisation du Project\nNouvelles fonctionnalité par rapport à la 1.5.4:\n-Ajout du support des langue(fr/en) limité (uniquement une partie de la cog Admin).\n-Les Autres Cogs reviennent sous peut."
+VERSION = "2.0.1"
+DATE = "22/11/2024"
+PATCH = "Cog Admin entièrement traduite (langues disponibles: fr/en)."
+OLD0.0 = "Initialisation du Project\nNouvelles fonctionnalité par rapport à la 1.5.4:\n-Ajout du support des langue(fr/en) limité (uniquement une partie de la cog Admin).\n-Les Autres Cogs reviennent sous peut."

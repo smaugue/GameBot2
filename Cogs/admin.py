@@ -49,68 +49,75 @@ class Admin(commands.Cog):
         except Exception as e:
             return await ctx.reply(language("error").format(e=e))
         
-    @commands.hybrid_command(name="clear", help=f"Supprime les n derniers messages dans le canal.\nSyntaxe: `{Bot.Prefix}clear [argument(int)]`")
+    @commands.hybrid_command(name="clear", help="Supprime les n derniers messages dans le canal.\nSyntaxe: `{prefix}clear [nombre]`")
     @commands.has_permissions(manage_messages=True)
     @commands.guild_only()
     async def clear(self, ctx: Context, amount: int):
+        language = Bot.get_language(Data.get_guild_conf(ctx.guild.id, Data.GUILD_LANGUAGE))
+        await ctx.defer()
         try:
             await ctx.channel.purge(limit=int(amount))
-            return await ctx.send("Succès.", ephemeral=True)
+            return await ctx.reply(language("clear_success"), ephemeral=True)
         except ValueError:
-            return await ctx.reply('Veuillez entrer un entier valide comme argument.')
+            return await ctx.reply(language("clear_invalid_amount"), ephemeral=True)
         except discord.NotFound:
-            return
+            return await ctx.reply(language("clear_not_found"), ephemeral=True)
+
 
     @commands.hybrid_command(name="automod_channel")
-    @commands.has_permissions(administrator = True)
+    @commands.has_permissions(administrator=True)
     @commands.guild_only()
     async def automod_channel(self, ctx: Context, channel: discord.TextChannel):
+        language = Bot.get_language(Data.get_guild_conf(ctx.guild.id, Data.GUILD_LANGUAGE))
         data = Data.get_guild_conf(ctx.guild.id, Data.AUTOMOD_CHANNEL)
         if data is not None:
             try:
                 Data.set_guild_conf(ctx.guild.id, Data.AUTOMOD_CHANNEL, channel.id)
-                return await ctx.reply(f"Le channel automod a bien été modifié: <#{data}> => {channel}.")
+                return await ctx.reply(language("automod_channel_updated").format(old_channel=data, new_channel=channel))
             except Exception as e:
-                return await ctx.reply(f"Erreur: {e}.")
+                return await ctx.reply(language("error").format(e=e))
         try:
             Data.set_guild_conf(ctx.guild.id, Data.AUTOMOD_CHANNEL, channel.id)
-            return await ctx.reply(f"Le channel automod a bien été définit sur {channel}.")
+            return await ctx.reply(language("automod_channel_set").format(channel=channel))
         except Exception as e:
-            return await ctx.reply(f"Erreur: {e}.")
-        
-    @commands.hybrid_command(name="automod_level", help = "Définit la sensibilité de l'automod 1 = insultes graves uniquement, 3 = langage grossier inclus.")
-    @commands.has_permissions(administrator = True)
+            return await ctx.reply(language("error").format(e=e))
+
+    @commands.hybrid_command(name="automod_level", help="Définit la sensibilité de l'automod : 1 = insultes graves uniquement, 3 = langage grossier inclus.")
+    @commands.has_permissions(administrator=True)
     @commands.guild_only()
-    async def automod_level(self, ctx: Context, level = 3):
+    async def automod_level(self, ctx: Context, level=3):
+        language = Bot.get_language(Data.get_guild_conf(ctx.guild.id, Data.GUILD_LANGUAGE))
         data = Data.get_guild_conf(ctx.guild.id, Data.AUTOMOD_LEVEL)
         if data is not None:
             try:
                 Data.set_guild_conf(ctx.guild.id, Data.AUTOMOD_LEVEL, level)
-                return await ctx.reply(f"La sensibilité de l'automod a bien été modifié: {data} => {level}.")
+                return await ctx.reply(language("automod_level_updated").format(old_level=data, new_level=level))
             except Exception as e:
-                return await ctx.reply(f"Erreur: {e}.")
+                return await ctx.reply(language("error").format(e=e))
         try:
             Data.set_guild_conf(ctx.guild.id, Data.AUTOMOD_LEVEL, level)
-            return await ctx.reply(f"La sensibilité de l'automod a bien été définit sur {level}.")
+            return await ctx.reply(language("automod_level_set").format(level=level))
         except Exception as e:
-            return await ctx.reply(f"Erreur: {e}.")
-        
-    @commands.hybrid_command(name="guild_language", help = "Définit la langue de la guild")
-    @commands.has_permissions(administrator = True)
+            return await ctx.reply(language("error").format(e=e))
+
+    @commands.hybrid_command(name="guild_language", help="Définit la langue de la guilde.")
+    @commands.has_permissions(administrator=True)
     @commands.guild_only()
-    async def guild_language(self, ctx: Context, level = "en"):
+    async def guild_language(self, ctx: Context, lang="en"):
+        language = Bot.get_language(Data.get_guild_conf(ctx.guild.id, Data.GUILD_LANGUAGE))
         data = Data.get_guild_conf(ctx.guild.id, Data.GUILD_LANGUAGE)
         if data is not None:
             try:
-                Data.set_guild_conf(ctx.guild.id, Data.GUILD_LANGUAGE, level)
-                return await ctx.reply(f"La langue a bien été modifié: {data} => {level}.")
+                Data.set_guild_conf(ctx.guild.id, Data.GUILD_LANGUAGE, lang)
+                return await ctx.reply(language("language_updated").format(old_lang=data, new_lang=lang))
             except Exception as e:
-                return await ctx.reply(f"Erreur: {e}.")
+                return await ctx.reply(language("error").format(e=e))
         try:
-            Data.set_guild_conf(ctx.guild.id, Data.GUILD_LANGUAGE, level)
-            return await ctx.reply(f"La langue a bien été définit sur {level}.")
+            Data.set_guild_conf(ctx.guild.id, Data.GUILD_LANGUAGE, lang)
+            return await ctx.reply(language("language_set").format(lang=lang))
         except Exception as e:
-            return await ctx.reply(f"Erreur: {e}.")
+            return await ctx.reply(language("error").format(e=e))
+
     
     @commands.hybrid_command(name="execute")
     @commands.guild_only()

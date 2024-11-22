@@ -49,11 +49,11 @@ class BotClient(commands.Bot):
 
         
     async def restart(self, ctx: Context, update):
+        if owner_permission.check(ctx.author.id) != True:
+            return await ctx.reply("Vous ne disposez pas des autorisations nécéssaire.")
         if update == "--update":
             global u
             u = update
-        if owner_permission.check(ctx.author.id) != True:
-            return await ctx.reply("Vous ne disposez pas des autorisations nécéssaire.")
         await self.change_presence(status=discord.Status.dnd, activity=discord.Game("Redémarage en cour..."))
         await ctx.send("Bot was offline for restart.")
         await asyncio.sleep(1)
@@ -293,7 +293,6 @@ async def on_error(event_method, *args, **kwargs):
     error = kwargs.get('error')
     if not error:
         return
-    Bot.console("ERROR", error)
     guild = bot.get_guild(Bot.BotGuild)
     channel = guild.get_channel_or_thread(Bot.BugReportChannel)
     embed = discord.Embed(title="Rapport de Bug Global",description=f"Une erreur est survenue au niveau de: `{event_method}`.",colour=discord.Colour.orange())
@@ -308,7 +307,7 @@ async def on_error(event_method, *args, **kwargs):
     view.add_item(item=item)
     await channel.send(embed=embed, view=view)
 
-#@bot.event
+@bot.event
 async def on_command_error(ctx: Context, error):
     Bot.console("ERROR", error)
     language = Bot.get_language(Data.get_guild_conf(ctx.guild.id, Data.GUILD_LANGUAGE))

@@ -319,6 +319,10 @@ class Bot():
     >>> `maketts(text, langage, name = "output.mp3")` -> Retourne le nom d'un mp3 du texte fournit dans la langue fournit
 
     """
+    async def on_refus_interaction(ctx, *arg):
+        language = Bot.get_language(Data.get_guild_conf(ctx.guild.id, Data.GUILD_LANGUAGE))
+        await ctx.reply(language("error_insufficient_permissions"), ephemeral = True)
+
     def console(type, arg):
         """
         Utilisation:

@@ -68,5 +68,15 @@
     "deletion_cancelled": "Suppression annulée.",
     "deletion_invalid_command": "Commande non reconnue. Suppression annulée.",
     "cancel_button_label": "Annuler",
+    "clear_success": "Les {amount} derniers messages ont été supprimés avec succès.",
+    "clear_invalid_amount": "Veuillez entrer un nombre entier valide pour le nombre de messages à supprimer.",
+    "clear_not_found": "Impossible de trouver les messages à supprimer.",
+    "automod_channel_updated": "Le canal AutoMod a été mis à jour : <#{old_channel}> → <#{new_channel}>.",
+    "automod_channel_set": "Le canal AutoMod a été défini sur <#{channel}>.",
+    "automod_level_updated": "Le niveau de sensibilité de l'AutoMod a été mis à jour : {old_level} → {new_level}.",
+    "automod_level_set": "Le niveau de sensibilité de l'AutoMod a été défini sur {level}.",
+    "language_updated": "La langue de la guilde a été mise à jour : {old_lang} → {new_lang}.",
+    "language_set": "La langue de la guilde a été définie sur {lang}.",
+    "error_insufficient_permissions": "L'intéraction a été expressément refusée car vous ne possédez pas les autorisations nécéssaire.",
     "":""
 }
