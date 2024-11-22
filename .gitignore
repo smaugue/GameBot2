@@ -1,0 +1,38 @@
+# Ignorer les fichiers de bases de données
+*.db
+*.db3
+
+# Ignorer les fichiers de configuration
+*.conf
+
+# Ignorer les fichiers de log
+*.log
+
+# Ignorer les fichiers de sauvegarde
+*.bak
+*.old
+*.backup
+
+# Ignorer les fichiers temporaires de l'éditeur
+*.swp
+*.swo
+*~
+
+# Ignorer les fichiers binaires compilés
+*.pyc
+
+# Ignorer les répertoires des dépendances
+vendor/
+venv/
+
+# Ignorer les fichiers de cache
+*.cache
+*.tmp
+*.pid
+*.lock
+
+# Ignorer les fichiers de contrôle de version
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

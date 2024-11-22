@@ -1,0 +1,10 @@
+{
+    "welcome": "Bienvenue dans le BelougaLuncher.",
+    "choose_option": "Sélectionner une option :",
+    "invalid_input": "Veuillez entrer un entier valide.",
+    "bot_choice": "Quel bot désirez-vous lancer ?",
+    "bot_list": "Voici la liste des bots disponibles :",
+    "update_choice": "Mise à jour",
+    "password_prompt": "Mot de passe :",
+    "error": "Une erreur est survenue :"
+}
