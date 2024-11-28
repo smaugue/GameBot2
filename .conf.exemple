@@ -1,0 +1,23 @@
+#Git reposit acces
+repo_owner = owner
+repo_name = reposit
+branch_name = main
+#don't remove
+ignore_files = updater.py .gitattributes gitignore .conf
+
+# AutoModAPI
+#API code soon available on my github
+api_key = me_key
+api_url = automod.exemple.com
+api_port = 8000
+
+#Bot
+
+bot_name= bot
+#crypted token, use encoder.py
+bot_token = "token"
+bot_guild = 0
+bot_annonce_channel = 0
+bot_console_channel = 0
+bot_message_channel = 0
+bot_prefix = !
