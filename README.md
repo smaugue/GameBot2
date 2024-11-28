@@ -15,5 +15,5 @@ Principalles conditions :
 - Pas de restrictions complémentaires — Vous n'êtes pas autorisé à appliquer des conditions légales ou des mesures techniques qui restreindraient légalement autrui à utiliser l'Oeuvre dans les conditions décrites par la licence.
 
 
-Pour plus d’informations, consultez le fichier [LICENSE](./LICENSE).
+Pour plus d’informations, consultez le fichier [LICENSE](./LICENCE).
 
