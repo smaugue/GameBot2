@@ -10,7 +10,7 @@ class Test(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.hybrid_command(name="test_pagined_embed")
+    @commands.command(name="test_pagined_embed")
     async def commande_embed(self, ctx):
         title = "Test de Pagination d'Embed"
         color = 0x3498db
@@ -19,7 +19,7 @@ class Test(commands.Cog):
         generator = EmbedGenerator()
         await generator.send_paginated_embed(ctx, title=title, color=Colour(color), content=content)
 
-    @commands.hybrid_command(name="test_pagined_embed_d")
+    @commands.command(name="test_pagined_embed_d")
     async def commande_embed_d(self, ctx, number: int):
         title = "Test de Pagination d'Embed"
         color = 0x3498db
@@ -28,3 +28,7 @@ class Test(commands.Cog):
 
         generator = EmbedGenerator()
         await generator.send_paginated_embed(ctx, title=title, color=Colour(color), content=content)
+
+
+async def setup(bot):
+    await bot.add_cog(Test(bot))

@@ -36,7 +36,7 @@ class Version:
         else:
             response.raise_for_status()
         return None
-    
+
     def get_github_patch():
         decoded_content = Version.get_github_data()
         date = "-/-/-"
@@ -53,12 +53,12 @@ class Version:
         decoded_content = Version.get_github_data()
         for line in decoded_content.split("\n"):
             if "VERSION" in line:
-                v, u, p = line.split("=")[1].strip().replace('"', '').replace("'", "").split(".")
-                return int(v), int(u), int(p)
+                v, u, p, c = line.split("=")[1].strip().replace('"', '').replace("'", "").split(".")
+                return int(v), int(u), int(p), int(c)
 
     def cmp(version: str):
-        bv, bu, bp = Version.get_github_version()
-        Version.LASTER_VERSION = f"{bv}.{bu}.{bp}"
+        bv, bu, bp, bc = Version.get_github_version()
+        Version.LASTER_VERSION = f"{bv}.{bu}.{bp}.{bc}"
         if v < bv or v == bv and u < bu or v == bv and u == bu and p < bp:
             return "o"
         if v > bv or v == bv and u > bu or v == bv and u == bu and p > bp:

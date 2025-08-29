@@ -19,6 +19,7 @@ Bot
 >>> Bot.Token
 >>> Bot.Prefix
 """
+
 import os
 import math
 import asyncio
@@ -26,30 +27,28 @@ import discord
 import inspect
 import sqlite3
 import pytz
-import sqlite3
 import json
+from gtts import gTTS
 from datetime import datetime
 from collections import deque
 from enum import Enum
 
-
 __path__ = os.path.dirname(os.path.abspath(__file__))
 tz = pytz.timezone('Europe/Paris')
-          
+
+
 class owner_permission:
+    owner_id = 592737249481850896
 
-    owner_id  = 592737249481850896
-
+    @staticmethod
     def check(member_id):
-        if member_id != owner_permission.owner_id:
-            return False
-        else: return True
+        return member_id == owner_permission.owner_id
 
-class Conf():
 
+class Conf:
     config_vars = {}
 
-    with open(".conf", "r") as config_file:
+    with open(".conf", "r", encoding="utf-8") as config_file:
         for line in config_file:
             if line.strip() and not line.startswith("#"):
                 key, value = line.split("=", 1)
@@ -59,10 +58,11 @@ class Conf():
                     value = value[1:-1]
                 config_vars[key] = value
 
+
 class Data:
     """
     Data
-    -----
+    ----
     Module Database
 
     Fonctionnalités
@@ -91,29 +91,23 @@ class Data:
     >>> Data.delete_guild_conf(guild_id, Data.AUTOMOD_CHANNEL)
     """
 
-    def __init__(self, db_path):
-        self.db_path = db_path
-        self.connection = sqlite3.connect(db_path)
-        self.cursor = self.connection.cursor()
-        self.create_tables()
-
-    key_value = key = {
-        'execute':'command_execute_permission',
-        'custom_commands_names':'custom_commands_names',
-        'sayic':'command_sayic_permission',
-        'say':'command_say_permission',
-        'vtts':'command_vtts_permission',
-        'ftts':'command_ftts_permission',
-        'randome':'command_rdm_permission',
-        'testvoca':'command_testvoca_permission',
-        'dm':'command_dm_permission',
-        'dm_blackliste':'blackliste_dm_id',
-        'automod_channel':'automod_channel_id',
+    # dictionnaire de correspondance entre clés et leur nom en base
+    key_value = {
+        'execute': 'command_execute_permission',
+        'custom_commands_names': 'custom_commands_names',
+        'sayic': 'command_sayic_permission',
+        'say': 'command_say_permission',
+        'vtts': 'command_vtts_permission',
+        'ftts': 'command_ftts_permission',
+        'randome': 'command_rdm_permission',
+        'testvoca': 'command_testvoca_permission',
+        'dm': 'command_dm_permission',
+        'dm_blackliste': 'blackliste_dm_id',
+        'automod_channel': 'automod_channel_id',
         'automod_level': 'automod_action_level',
-        'vtts_directe_message':'vtts_directe_message',
+        'vtts_directe_message': 'vtts_directe_message',
         'guild_language': 'guild_language',
         'automod_enable': 'automod_enable_state'
-
     }
 
     keys = list(key_value.keys())
@@ -134,15 +128,23 @@ class Data:
     GUILD_LANGUAGE = keys[13]
     AUTOMOD_ENABLE = keys[14]
 
-    def create_tables(self):
-        self.cursor.execute('''CREATE TABLE IF NOT EXISTS guild_conf (
+    def __init__(self, db_path):
+        self.db_path = db_path
+        # Création de la base de données et des tables si nécessaires
+        with sqlite3.connect(db_path) as connection:
+            cursor = connection.cursor()
+            self.create_tables(cursor)
+            connection.commit()
+
+    def create_tables(self, cursor):
+        cursor.execute('''CREATE TABLE IF NOT EXISTS guild_conf (
                                 guild_id INTEGER,
                                 conf_key TEXT,
                                 conf_value TEXT,
                                 PRIMARY KEY (guild_id, conf_key)
                             )''')
 
-        self.cursor.execute('''CREATE TABLE IF NOT EXISTS user_conf (
+        cursor.execute('''CREATE TABLE IF NOT EXISTS user_conf (
                                 guild_id INTEGER,
                                 user_id INTEGER,
                                 conf_key TEXT,
@@ -150,7 +152,7 @@ class Data:
                                 PRIMARY KEY (guild_id, user_id, conf_key)
                             )''')
 
-        self.cursor.execute('''CREATE TABLE IF NOT EXISTS user_game_data (
+        cursor.execute('''CREATE TABLE IF NOT EXISTS user_game_data (
                                 user_id INTEGER,
                                 guild_id INTEGER,
                                 game_key TEXT,
@@ -159,143 +161,100 @@ class Data:
                             )''')
 
         # Ajout des index pour améliorer les performances des requêtes
-        self.cursor.execute('''CREATE INDEX IF NOT EXISTS idx_guild_conf ON guild_conf (guild_id, conf_key)''')
-        self.cursor.execute('''CREATE INDEX IF NOT EXISTS idx_user_conf ON user_conf (guild_id, user_id, conf_key)''')
-        self.cursor.execute('''CREATE INDEX IF NOT EXISTS idx_user_game_data ON user_game_data (user_id, guild_id, game_key)''')
+        cursor.execute('''CREATE INDEX IF NOT EXISTS idx_guild_conf ON guild_conf (guild_id, conf_key)''')
+        cursor.execute('''CREATE INDEX IF NOT EXISTS idx_user_conf ON user_conf (guild_id, user_id, conf_key)''')
+        cursor.execute('''CREATE INDEX IF NOT EXISTS idx_user_game_data ON user_game_data (user_id, guild_id, game_key)''')
 
-        self.connection.commit()
+    @staticmethod
+    def _execute(query, params=(), fetchone=False, commit=False):
+        # Utilisation de Bot.Name pour construire le nom de la base de données
+        with sqlite3.connect(f"{Bot.Name}.db") as connection:
+            cursor = connection.cursor()
+            cursor.execute(query, params)
+            if commit:
+                connection.commit()
+            if fetchone:
+                return cursor.fetchone()
+            else:
+                return cursor.fetchall()
 
     @staticmethod
     def set_guild_conf(guild_id, conf_key, conf_value):
-        data =  Data.get_guild_conf(guild_id, conf_key)
-        if data:
-            connection = sqlite3.connect(f"{Bot.Name}.db")
-            cursor = connection.cursor()
-            cursor.execute('''UPDATE guild_conf
-                            SET conf_value = ?
-                            WHERE guild_id = ? AND conf_key = ?''',
-                        (conf_value, guild_id, conf_key))
-            connection.commit()
-            connection.close()
+        if Data.get_guild_conf(guild_id, conf_key):
+            Data._execute('''UPDATE guild_conf
+                             SET conf_value = ?
+                             WHERE guild_id = ? AND conf_key = ?''',
+                          (conf_value, guild_id, conf_key), commit=True)
         else:
-            connection = sqlite3.connect(f"{Bot.Name}.db")
-            cursor = connection.cursor()
-            cursor.execute('''INSERT OR REPLACE INTO guild_conf (guild_id, conf_key, conf_value)
-                            VALUES (?, ?, ?)''', (guild_id, conf_key, conf_value))
-            connection.commit()
-            connection.close()
+            Data._execute('''INSERT OR REPLACE INTO guild_conf (guild_id, conf_key, conf_value)
+                             VALUES (?, ?, ?)''',
+                          (guild_id, conf_key, conf_value), commit=True)
 
     @staticmethod
     def set_user_conf(guild_id, user_id, conf_key, conf_value):
-        data =  Data.get_user_conf(guild_id, user_id, conf_key)
-        if data:
-            connection = sqlite3.connect(f"{Bot.Name}.db")
-            cursor = connection.cursor()
-            cursor.execute('''UPDATE user_conf
-                            SET conf_value = ?
-                            WHERE guild_id = ? AND user_id = ? AND conf_key = ?''',
-                        (conf_value, guild_id, user_id, conf_key))
-            connection.commit()
-            connection.close()
+        if Data.get_user_conf(guild_id, user_id, conf_key):
+            Data._execute('''UPDATE user_conf
+                             SET conf_value = ?
+                             WHERE guild_id = ? AND user_id = ? AND conf_key = ?''',
+                          (conf_value, guild_id, user_id, conf_key), commit=True)
         else:
-            connection = sqlite3.connect(f"{Bot.Name}.db")
-            cursor = connection.cursor()
-            cursor.execute('''INSERT OR REPLACE INTO user_conf (guild_id, user_id, conf_key, conf_value)
-                            VALUES (?, ?, ?, ?)''', (guild_id, user_id, conf_key, conf_value))
-            connection.commit()
-            connection.close()
+            Data._execute('''INSERT OR REPLACE INTO user_conf (guild_id, user_id, conf_key, conf_value)
+                             VALUES (?, ?, ?, ?)''',
+                          (guild_id, user_id, conf_key, conf_value), commit=True)
 
     @staticmethod
     def set_user_game_data(user_id, guild_id, game_key, game_value):
-        data = Data.get_user_game_data(user_id, guild_id, game_key)
-        if data:
-            connection = sqlite3.connect(f"{Bot.Name}.db")
-            cursor = connection.cursor()
-            cursor.execute('''UPDATE user_game_data
-                            SET game_value = ?
-                            WHERE user_id = ? AND guild_id = ? AND game_key = ?''',
-                        (game_value, user_id, guild_id, game_key))
-            connection.commit()
-            connection.close()
+        if Data.get_user_game_data(user_id, guild_id, game_key):
+            Data._execute('''UPDATE user_game_data
+                             SET game_value = ?
+                             WHERE user_id = ? AND guild_id = ? AND game_key = ?''',
+                          (game_value, user_id, guild_id, game_key), commit=True)
         else:
-            connection = sqlite3.connect(f"{Bot.Name}.db")
-            cursor = connection.cursor()
-            cursor.execute('''INSERT OR REPLACE INTO user_game_data (user_id, guild_id, game_key, game_value)
-                            VALUES (?, ?, ?, ?)''', (user_id, guild_id, game_key, game_value))
-            connection.commit()
-            connection.close()
+            Data._execute('''INSERT OR REPLACE INTO user_game_data (user_id, guild_id, game_key, game_value)
+                             VALUES (?, ?, ?, ?)''',
+                          (user_id, guild_id, game_key, game_value), commit=True)
 
     @staticmethod
     def get_guild_conf(guild_id, conf_key):
-        connection = sqlite3.connect(f"{Bot.Name}.db")
-        cursor = connection.cursor()
-        cursor.execute('''SELECT conf_value FROM guild_conf
-                          WHERE guild_id = ? AND conf_key = ?''', (guild_id, conf_key))
-        result = cursor.fetchone()
-        connection.close()
-        if result:
-            return result[0]
-        else:
-            return None
+        result = Data._execute('''SELECT conf_value FROM guild_conf
+                                  WHERE guild_id = ? AND conf_key = ?''',
+                               (guild_id, conf_key), fetchone=True)
+        return result[0] if result else None
 
     @staticmethod
     def get_user_conf(guild_id, user_id, conf_key):
-        connection = sqlite3.connect(f"{Bot.Name}.db")
-        cursor = connection.cursor()
-        cursor.execute('''SELECT conf_value FROM user_conf
-                          WHERE guild_id = ? AND user_id = ? AND conf_key = ?''',
-                       (guild_id, user_id, conf_key))
-        result = cursor.fetchone()
-        connection.close()
-        if result:
-            return result[0]
-        else:
-            return None
+        result = Data._execute('''SELECT conf_value FROM user_conf
+                                  WHERE guild_id = ? AND user_id = ? AND conf_key = ?''',
+                               (guild_id, user_id, conf_key), fetchone=True)
+        return result[0] if result else None
 
     @staticmethod
     def get_user_game_data(user_id, guild_id, game_key):
-        connection = sqlite3.connect(f"{Bot.Name}.db")
-        cursor = connection.cursor()
-        cursor.execute('''SELECT game_value FROM user_game_data
-                          WHERE user_id = ? AND guild_id = ? AND game_key = ?''', (user_id, guild_id, game_key))
-        result = cursor.fetchone()
-        connection.close()
-        if result:
-            return result[0]
-        else:
-            return None
+        result = Data._execute('''SELECT game_value FROM user_game_data
+                                  WHERE user_id = ? AND guild_id = ? AND game_key = ?''',
+                               (user_id, guild_id, game_key), fetchone=True)
+        return result[0] if result else None
 
     @staticmethod
     def delete_guild_conf(guild_id, conf_key):
-        connection = sqlite3.connect(f"{Bot.Name}.db")
-        cursor = connection.cursor()
-        cursor.execute('''DELETE FROM guild_conf
-                          WHERE guild_id = ? AND conf_key = ?''',
-                       (guild_id, conf_key))
-        connection.commit()
-        connection.close()
+        Data._execute('''DELETE FROM guild_conf
+                         WHERE guild_id = ? AND conf_key = ?''',
+                      (guild_id, conf_key), commit=True)
 
     @staticmethod
     def delete_user_conf(guild_id, user_id, conf_key):
-        connection = sqlite3.connect(f"{Bot.Name}.db")
-        cursor = connection.cursor()
-        cursor.execute('''DELETE FROM user_conf
-                          WHERE guild_id = ? AND user_id = ? AND conf_key = ?''',
-                       (guild_id, user_id, conf_key))
-        connection.commit()
-        connection.close()
+        Data._execute('''DELETE FROM user_conf
+                         WHERE guild_id = ? AND user_id = ? AND conf_key = ?''',
+                      (guild_id, user_id, conf_key), commit=True)
 
     @staticmethod
     def delete_user_game_data(user_id, guild_id, game_key):
-        connection = sqlite3.connect(f"{Bot.Name}.db")
-        cursor = connection.cursor()
-        cursor.execute('''DELETE FROM user_game_data
-                          WHERE user_id = ? AND guild_id = ? AND game_key = ?''',
-                       (user_id, guild_id, game_key))
-        connection.commit()
-        connection.close()
+        Data._execute('''DELETE FROM user_game_data
+                         WHERE user_id = ? AND guild_id = ? AND game_key = ?''',
+                      (user_id, guild_id, game_key), commit=True)
 
-class Bot():
+
+class Bot:
     """
     Bot
     ----
@@ -305,7 +264,7 @@ class Bot():
     Variables
     ----------
 
-    Permet de réccupérer des info sur le Bot
+    Permet de récupérer des info sur le Bot
     
     `Name` -> str()
     `Token` -> str()
@@ -324,11 +283,41 @@ class Bot():
     >>> `maketts(text, langage, name = "output.mp3")` -> Retourne le nom d'un mp3 du texte fournit dans la langue fournit
 
     """
+
+    def __init__(self, launched_bot, pasword):
+        Bot.start_time = datetime.now(tz).strftime('%Y-%m-%d_%H:%M:%S')
+        Bot.Pasword = pasword
+        Bot.Name = Conf.config_vars.get(f"{launched_bot}_name")
+        Bot.Token = self.get_token(Conf.config_vars.get(f"{launched_bot}_token"))
+        Bot.BotGuild = Conf.config_vars.get(f"{launched_bot}_guild")
+        Bot.AnnonceChannel = Conf.config_vars.get(f"{launched_bot}_annonce_channel")
+        Bot.ConsoleChannel = Conf.config_vars.get(f"{launched_bot}_console_channel")
+        Bot.MessageChannel = Conf.config_vars.get(f"{launched_bot}_message_channel")
+        Bot.BugReportChannel = Conf.config_vars.get(f"{launched_bot}_bugreport_channel")
+        Bot.Prefix = Conf.config_vars.get(f"{launched_bot}_prefix")
+        Bot.Database = Data(f"{Bot.Name}.db")
+    
+    def get_token(self, token):
+        # Optimisation de la décryption du token avec une compréhension de liste
+        codes = token.split()
+        return "".join(chr((int(code) - ord(self.Pasword[i % len(self.Pasword)])) % 256)
+                       for i, code in enumerate(codes))
+        
+    @staticmethod
+    def logs(data):
+        try:
+            with open("logs/logs.txt", "a+", encoding="utf-8") as logs_file:
+                logs_file.write(data + "\n")
+        except Exception as e:
+            Bot.console("ERROR", f"Log impossible: {e}", False)
+
+    @staticmethod
     async def on_refus_interaction(ctx, *arg):
         language = Bot.get_language(Data.get_guild_conf(ctx.guild.id, Data.GUILD_LANGUAGE))
-        await ctx.reply(language("error_insufficient_permissions"), ephemeral = True)
+        await ctx.reply(language("error_insufficient_permissions"), ephemeral=True)
 
-    def console(type, arg):
+    @staticmethod
+    def console(type, arg, log: bool = True):
         """
         Utilisation:
         ------------
@@ -340,21 +329,26 @@ class Bot():
         >>> console("INFO", "Bot loggin")
         """
         colors = {
-            "INFO": "\033[94m",  # Blue
-            "WARN": "\033[93m",  # Yellow
-            "ERROR": "\033[91m",  # Red
-            "DEBUG": "\033[92m",  # Green
-            "FUNCTION": "\033[35m",  # Violet
-            "GRAY": "\033[90m",  # Gray
-            "ENDC": "\033[0m"  # Reset color
+            "INFO": "\033[94m",    # Blue
+            "WARN": "\033[93m",    # Yellow
+            "ERROR": "\033[91m",   # Red
+            "DEBUG": "\033[92m",   # Green
+            "FUNCTION": "\033[35m",# Violet
+            "GRAY": "\033[90m",    # Gray
+            "ENDC": "\033[0m"      # Reset color
         }
         now = datetime.now(tz)
         startDate = now.strftime('%Y-%m-%d')
         startTime = now.strftime('%H:%M:%S')
         color = colors.get(type.upper(), colors["ENDC"])
-        print(f"{colors['GRAY']}{startDate} {startTime} {color}{type}{colors['ENDC']}   {colors['FUNCTION']}{inspect.stack()[1].function}{colors['ENDC']}: {arg}")
+        if log:
+            data = f"{startDate} {startTime} {type}\t{inspect.stack()[1].function}: {arg}"
+            Bot.logs(data)
+        print(f"{colors['GRAY']}{startDate} {startTime} {color}{type}{colors['ENDC']}\t{colors['FUNCTION']}{inspect.stack()[1].function}{colors['ENDC']}: {arg}")
 
-    def get_language(language: str = "en"):
+    @staticmethod
+    def get_language(language: str = None):
+        language = language or "en"
         """
         Charge un fichier de langue et retourne une fonction utilitaire pour obtenir des chaînes de traduction.
         
@@ -364,27 +358,15 @@ class Bot():
         lang_file_path = os.path.join("languages", language)
     
         try:
-            # Charger le fichier de langue
             with open(lang_file_path, "r", encoding="utf-8") as lang_file:
                 STRINGS = json.load(lang_file)
         except FileNotFoundError:
             raise ValueError(f"Language file for '{language}' not found.")
     
         def translate(key: str, **kwargs):
-            """
-            Récupère une chaîne traduite et injecte les variables si fournies.
-            
-            :param key: La clé de la chaîne de traduction.
-            :param kwargs: Variables à injecter dans la chaîne.
-            :return: Chaîne traduite avec ou sans injection.
-            """
             try:
-                # Obtenir la chaîne de traduction brute
                 template = STRINGS[key]
-                # Injecter les variables si des arguments sont fournis
-                if kwargs:
-                    return template.format(**kwargs)
-                return template  # Retour brut si aucun argument
+                return template.format(**kwargs) if kwargs else template
             except KeyError:
                 Bot.console("ERROR", f"[Translation Missing: {key}]")
                 return f"[Translation Missing: {key}]"
@@ -393,40 +375,43 @@ class Bot():
                 return f"[Error in Translation: {e}]"
     
         return translate
-
-    def get_token(token, key):
-        codes = token.split()
-        token = ""
-        for i, code in enumerate(codes):
-            decalage = ord(key[i % len(key)])
-            char = chr((int(code) - decalage)%256)
-            token += char
-        return token
     
-    def Launched(launched_bot, pasword):
-        Bot.Pasword = pasword
-        Bot.Name = Conf.config_vars.get(f"{launched_bot}_name")
-        Bot.Token = Bot.get_token(Conf.config_vars.get(f"{launched_bot}_token"), pasword)
-        Bot.BotGuild = Conf.config_vars.get(f"{launched_bot}_guild")
-        Bot.AnnonceChannel = Conf.config_vars.get(f"{launched_bot}_annonce_channel")
-        Bot.ConsoleChannel = Conf.config_vars.get(f"{launched_bot}_console_channel")
-        Bot.MessageChannel = Conf.config_vars.get(f"{launched_bot}_message_channel")
-        Bot.BugReportChannel = Conf.config_vars.get(f"{launched_bot}_bugreport_channel")
-        Bot.Prefix = Conf.config_vars.get(f"{launched_bot}_prefix")
-        Bot.Database = Data(f"{Bot.Name}.db")
 
-    Name = str()
-    Token = str()
-    BotGuild = int()
-    AnnonceChannel = int()
-    ConsoleChannel = int()
-    MessageChannel = int()
-    BugReportChannel = int()
-    Prefix = str()
-    Pasword = str()
-
-class Reposit():
-        
+class Reposit:
     repo_owner = Conf.config_vars.get("repo_owner")
     repo_name = Conf.config_vars.get("repo_name")
     token = Conf.config_vars.get("git_token")
+
+class YTDV3:
+    api_key = Conf.config_vars.get("youtube_api_key")
+
+
+class Utilitary:
+
+    @staticmethod
+    def maketts(text, langage="fr", name="output.mp3"):
+        tts_instance = gTTS(text, lang=langage)
+        file_path = os.path.join("tmp", name)
+        tts_instance.save(file_path)
+        return file_path
+    
+    queue = deque()
+
+    @staticmethod
+    async def play_audio(ctx, file):
+        if ctx.voice_client.is_playing():
+            Utilitary.queue.append((ctx, file))
+            await ctx.reply("Audio ajouté à la file d'attente.", ephemeral=True)
+        else:
+            ctx.voice_client.play(discord.FFmpegPCMAudio(file),
+                                  after=lambda e: Utilitary.on_play_finish(ctx, file))
+
+    @staticmethod
+    def on_play_finish(ctx, file):
+        try:
+            os.remove(file)
+        except Exception as e:
+            Bot.console("ERROR", f"Erreur lors de la suppression du fichier audio: {e}")
+        if Utilitary.queue:
+            next_ctx, next_file = Utilitary.queue.popleft()
+            asyncio.run_coroutine_threadsafe(Utilitary.play_audio(next_ctx, next_file), ctx.bot.loop)

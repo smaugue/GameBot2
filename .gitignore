@@ -30,6 +30,7 @@ venv/
 *.tmp
 *.pid
 *.lock
+*.gitattributes
 
 # Ignorer les fichiers de contrôle de version
 .DS_Store

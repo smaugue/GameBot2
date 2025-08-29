@@ -2,6 +2,7 @@
 # Voir : https://creativecommons.org/licenses/by-nc-sa/4.0/
 
 #discord
+from fileinput import filename
 import discord
 from discord.ext import commands
 from discord.ext.commands import Context
@@ -10,22 +11,18 @@ import os
 import asyncio
 import argparse
 from datetime import datetime
-#self.Cogs
-from Cogs.test import Test
-from Cogs.admin import Admin
-from Cogs.common import Common
 #self.Packs
 from Packs.automod import AutoMod
 from Packs.interpretor import parse_actions
 from Packs.version import Version, BOT_VERSION
-from Packs.Botloader import tz,owner_permission, Data, Bot
+from Packs.Botloader import tz, owner_permission, Data, Bot
 
 def main():
     parser = argparse.ArgumentParser(description='Scripte Bot V1.2')
     parser.add_argument('Botname', type=str, default="Bot", help='Nom du bot à lancer')
     parser.add_argument('--pasword', type=str, default="", help="Mot de passe")
     args = parser.parse_args()
-    Bot.Launched(args.Botname, str(args.pasword))
+    Bot(args.Botname, str(args.pasword))
 
 if __name__ == '__main__':
     main()
@@ -34,25 +31,37 @@ r = "n"
 u = ""
 
 class BotClient(commands.Bot):
+    __slots__ = ()  # Utilisation de __slots__ pour réduire la consommation de mémoire
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     async def on_ready(self):
         await self.change_presence(status=discord.Status.online, activity=discord.Game("Chargement des cookis!"))
-        await self.add_cog(Test(self))
-        await self.add_cog(Admin(self))
-        await self.add_cog(Common(self))
+
+        # Chargement des cogs
+        for filename in os.listdir("./Cogs"):
+            if filename.endswith(".py"):
+                try:
+                    await self.load_extension(f"Cogs.{filename[:-3]}")  # Utilise self, pas bot
+                    Bot.console("INFO", f"Cog {filename} chargé.")
+                except Exception as e:
+                    Bot.console("WARN", f"Erreur lors du chargement du cog {filename}: {e}")
+
         Bot.console("INFO", f'Logged in as {self.user} (ID: {self.user.id})')
         await self.versions(type="on_ready", ctx=None)
+
+        # Synchronisation des commandes slash
         try:
             synced = await self.tree.sync()
-            Bot.console("INFO", f'Synced {len(synced)} commands')
+            Bot.console("INFO", f'Synced {len(synced)} slash commands')
         except Exception as e:
-            Bot.console("ERROR", f'Error: {e}')
-        await self.change_presence(activity=discord.Activity(type=discord.ActivityType.playing, name="coocke you!"))
-        print("")
+            Bot.console("ERROR", f'Error syncing slash commands: {e}')
 
-        
+        # Changement de présence après tout chargement
+        await self.change_presence(activity=discord.Activity(type=discord.ActivityType.playing, name="coocke you!"))
+
+
     async def restart(self, ctx: Context, update):
         if owner_permission.check(ctx.author.id) != True:
             return await ctx.reply("Vous ne disposez pas des autorisations nécéssaire.")
@@ -75,6 +84,7 @@ class BotClient(commands.Bot):
             return Bot.console("INFO", f'Logged in V{BOT_VERSION}')
 
         check = Version.check()
+        # Cache de la langue pour éviter des appels répétés en mémoire
         language = Bot.get_language(Data.get_guild_conf(ctx.guild.id, Data.GUILD_LANGUAGE))
 
         if check == "j":
@@ -96,12 +106,14 @@ class BotClient(commands.Bot):
             return await ctx.reply(embed=embed)
 
     async def on_interaction(self, interaction: discord.Interaction):
+        # Pré-calcul de la langue en fonction du contexte (guild ou autre)
         if interaction.data["custom_id"] == "spam_dm":
             b, guild, user, msg = interaction.data["values"][0].split("/|/")
             guild_language = Bot.get_language(Data.get_guild_conf(int(guild), Data.GUILD_LANGUAGE))
         else:
             guild_language = Bot.get_language(Data.get_guild_conf(interaction.guild.id, Data.GUILD_LANGUAGE))
-
+        if interaction.type == discord.InteractionType.application_command:
+            await interaction.response.defer()  # Appel de la coroutine
         if interaction.type == discord.InteractionType.component:
             await interaction.response.defer()
 
@@ -169,7 +181,7 @@ class BotClient(commands.Bot):
                     disabled=True
                 )
                 view.add_item(item=item)
-                embeds = interaction.message.embeds.copy()
+                embeds = interaction.message.embeds  # Pas de copie inutile
                 embed = embeds[0]
                 embed.set_field_at(
                     index=1,
@@ -189,7 +201,7 @@ class BotClient(commands.Bot):
                     disabled=True
                 )
                 view.add_item(item=item)
-                embeds = interaction.message.embeds.copy()
+                embeds = interaction.message.embeds
                 embed = embeds[0]
                 embed.set_field_at(
                     index=1,
@@ -209,7 +221,7 @@ class BotClient(commands.Bot):
                     disabled=True
                 )
                 view.add_item(item=item)
-                embeds = interaction.message.embeds.copy()
+                embeds = interaction.message.embeds
                 embed = embeds[0]
                 embed.set_field_at(
                     index=3,
@@ -228,8 +240,9 @@ class BotClient(commands.Bot):
         if message.content:
             if Data.get_guild_conf(message.guild.id, Data.AUTOMOD_ENABLE) == "1":
                 level = Data.get_guild_conf(message.guild.id, Data.AUTOMOD_LEVEL)
-                if not level: level = 3
-                blw, blws = AutoMod.check_message(message.content, level = level)
+                if not level: 
+                    level = 3
+                blw, blws = AutoMod.check_message(message.content, level=level)
                 v = AutoMod.automod_version()
         if len(blw) != 0:
             automod_channel_id = Data.get_guild_conf(message.guild.id, Data.AUTOMOD_CHANNEL)
@@ -271,8 +284,11 @@ class BotClient(commands.Bot):
             if len(data) > 0:
                 data = data.split("\n")
             ctx = await bot.get_context(message)
-            if message.content in data:
-                executor = Data.get_guild_conf(message.guild.id, message.content)
+            message_content = message.content.strip()
+            space_index = message_content.find(' ')
+            command = message_content if space_index == -1 else message_content[:space_index]
+            if command in data:
+                executor = Data.get_guild_conf(message.guild.id, command)
                 try:
                     action_list = parse_actions(ctx, executor)
                     for action in action_list:
@@ -282,7 +298,13 @@ class BotClient(commands.Bot):
                     Bot.console("ERROR", e)
         await self.process_commands(message)
 
-bot = client = BotClient(command_prefix=Bot.Prefix,intents=discord.Intents.all(),description="Belouga.exe is watching you!!!")
+# Pour limiter la consommation mémoire, nous utilisons uniquement les intents requis
+intents = discord.Intents.default()
+intents.message_content = True
+intents.guilds = True
+intents.members = True
+
+bot = client = BotClient(command_prefix=Bot.Prefix, intents=intents, description="Belouga.exe is watching you!!!")
 bot.remove_command('help')
 
 @bot.command(name="restart")
@@ -300,7 +322,7 @@ async def on_error(event_method, *args, **kwargs):
         return
     guild = bot.get_guild(Bot.BotGuild)
     channel = guild.get_channel_or_thread(Bot.BugReportChannel)
-    embed = discord.Embed(title="Rapport de Bug Global",description=f"Une erreur est survenue au niveau de: `{event_method}`.",colour=discord.Colour.orange())
+    embed = discord.Embed(title="Rapport de Bug Global", description=f"Une erreur est survenue au niveau de: `{event_method}`.", colour=discord.Colour.orange())
     embed.add_field(name="Bug:", value=f"```{error}```", inline=False)
     embed.add_field(name="Etat de correction:", value="En cour...", inline=False)
     embed.set_footer(text=f"Bot V{BOT_VERSION}")
@@ -312,7 +334,7 @@ async def on_error(event_method, *args, **kwargs):
     view.add_item(item=item)
     await channel.send(embed=embed, view=view)
 
-@bot.event
+#@bot.event
 async def on_command_error(ctx: Context, error):
     Bot.console("ERROR", error)
     language = Bot.get_language(Data.get_guild_conf(ctx.guild.id, Data.GUILD_LANGUAGE))
@@ -329,7 +351,7 @@ async def on_command_error(ctx: Context, error):
         return await ctx.reply('Discord possède une API de piètre qualité.')
     guild = bot.get_guild(Bot.BotGuild)
     channel = guild.get_channel_or_thread(Bot.BugReportChannel)
-    embed = discord.Embed(title="Rapport de Bug",description=f"Commande concernée `{command}`.",colour=discord.Colour.orange())
+    embed = discord.Embed(title="Rapport de Bug", description=f"Commande concernée `{command}`.", colour=discord.Colour.orange())
     embed.add_field(name="Bug:", value=f"```{error}```", inline=False)
     embed.add_field(name="Etat de correction:", value="En cour...", inline=False)
     embed.set_footer(text=f"Bot V{BOT_VERSION}")
@@ -344,5 +366,6 @@ async def on_command_error(ctx: Context, error):
 
 try:
     bot.run(Bot.Token)
-except: print("Bad Pasword")
+except:
+    print("Bad Pasword")
 os.system(f"python Launcher.py --bot {Bot.Name} --restart {r} --pasword {Bot.Pasword} {u}")

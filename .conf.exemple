@@ -3,13 +3,16 @@ repo_owner = owner
 repo_name = reposit
 branch_name = main
 #don't remove
-ignore_files = updater.py .gitattributes gitignore .conf
+ignore_files = updater.py .gitattributes .gitignore .conf
 
 # AutoModAPI
 #API code soon available on my github
 api_key = me_key
 api_url = automod.exemple.com
 api_port = 8000
+
+# YouTube Data V3 API
+api_key = key
 
 #Bot
 

@@ -1,123 +1,221 @@
-# Ce projet est sous licence CC BY-NC-SA 4.0
-# Voir : https://creativecommons.org/licenses/by-nc-sa/4.0/
-
 import discord
 import os
-import re
-from Packs.Botloader import Bot
+import shlex
+import aiofiles
 import aiohttp
-from gtts import gTTS
+import re
 from datetime import datetime
+from gtts import gTTS
+from abc import ABC, abstractmethod
+from Packs.Botloader import Bot
+import asyncio
 
-class SendMessageAction:
+# Répertoire temporaire pour les fichiers
+TMP_DIR = "tmp"
+os.makedirs(TMP_DIR, exist_ok=True)
+
+
+# ======== Classes d'Actions Abstraites et Concrètes ========
+class Action(ABC):
+    @abstractmethod
+    async def execute(self, ctx):
+        """Exécute l'action."""
+        pass
+
+class Start():
+    @abstractmethod
+    async def execute(self, ctx):
+        pass
+
+
+class SendEmbedAction(Action):
+    def __init__(self, title, content, color=discord.Color.blue()):
+        self.title = title
+        self.content = content
+        self.color = color
+
+    async def execute(self, ctx):
+        embed = discord.Embed(title=self.title, description=self.content, color=self.color)
+        await ctx.send(embed=embed)
+        Bot.console("INFO", f"[{ctx.author}({ctx.author.id})] Send Embed: {self.title} [{self.content}]")
+
+    # Pas de lourdes opérations réseau ou fichiers donc très léger
+
+
+class SendMessageAction(Action):
     def __init__(self, content):
         self.content = content
+
     async def execute(self, ctx):
         await ctx.send(self.content)
+        Bot.console("INFO", f"[{ctx.author}({ctx.author.id})] Message sent: {self.content}")
 
-class GenerateMP3Action:
-    def __init__(self, text, lang='fr'):
+
+class GenerateMP3Action(Action):
+    def __init__(self, text, lang="fr"):
         self.text = text
         self.lang = lang
-    async def execute(self, ctx):
-        startTime = datetime.strftime(datetime.now(), '%Y%m%d_%H%M%S')
-        tts = gTTS(text=self.text, lang=self.lang)
-        output_filename = f'{ctx.guild.id}_{startTime}_output.mp3'
-        if os.path.exists(output_filename):
-            i = 2
-            while os.path.exists(f'{ctx.guild.id}_{startTime}_{i}_output.mp3'):
-                i += 1
-            output_filename = f'{ctx.guild.id}_{startTime}_{i}_output.mp3'  
-        tts.save(output_filename)
-        await ctx.send(file=discord.File(output_filename))
-        os.remove(output_filename)
 
-class CreateRoleAction:
+    async def execute(self, ctx):
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        output_filename = get_unique_filename(TMP_DIR, f"{ctx.author.id}_{timestamp}_output", "mp3")
+        try:
+            # Utilisation de gTTS de manière asynchrone
+            tts = gTTS(text=self.text, lang=self.lang)
+            await asyncio.to_thread(tts.save, output_filename)  # Sauvegarde dans un thread pour éviter le blocage
+            await ctx.send(file=discord.File(output_filename))
+            Bot.console("INFO", f"[{ctx.author}({ctx.author.id})] MP3 generated and sent: {output_filename} [{self.text}]")
+        except Exception as e:
+            Bot.console("WARN", f"[{ctx.author}({ctx.author.id})] Error generating MP3: {e}")
+        finally:
+            # Assurer une suppression propre du fichier
+            await asyncio.to_thread(os.remove, output_filename)
+
+
+class CreateRoleAction(Action):
     def __init__(self, name, color):
         self.name = name
         self.color = discord.Color(int(color, 16))
-    async def execute(self, ctx):
-        guild = ctx.guild
-        await guild.create_role(name=self.name, color=self.color)
-        await ctx.send(f"Role '{self.name}' created with color {self.color}.")
 
-class SendImageFromURLAction:
-    def __init__(self, url):
-        self.url = url
     async def execute(self, ctx):
         try:
+            guild = ctx.guild
+            await guild.create_role(name=self.name, color=self.color)
+            await ctx.send(f"Role '{self.name}' created with color {self.color}.")
+            Bot.console("INFO", f"[{ctx.author}({ctx.author.id})] Role created: {self.name} with color {self.color}")
+        except Exception as e:
+            Bot.console("WARN", f"[{ctx.author}({ctx.author.id})] Error creating role: {e}")
+
+
+class SendImageFromURLAction(Action):
+    def __init__(self, url):
+        self.url = url
+
+    async def execute(self, ctx):
+        try:
+            # Utilisation de aiohttp de manière efficace avec une session persistante
             async with aiohttp.ClientSession() as session:
                 async with session.get(self.url) as response:
                     if response.status == 200:
                         data = await response.read()
-                        with open('temp_image.png', 'wb') as f:
-                            f.write(data)
-                        await ctx.send(file=discord.File('temp_image.png'))
-                        os.remove('temp_image.png')
+                        image_path = os.path.join(TMP_DIR, "temp_image.png")
+                        # Utilisation de aiofiles pour écrire de manière asynchrone
+                        async with aiofiles.open(image_path, 'wb') as f:
+                            await f.write(data)
+                        await ctx.send(file=discord.File(image_path))
+                        Bot.console("INFO", f"[{ctx.author}({ctx.author.id})] Image sent from URL: {self.url}")
+                        await asyncio.to_thread(os.remove, image_path)
                     else:
-                        await ctx.send('Failed to retrieve image from URL.')
-        except Exception as e: Bot.console("WARN", f"Erreur:{e}")
+                        await ctx.send("Failed to retrieve image from URL.")
+                        Bot.console("WARN", f"[{ctx.author}({ctx.author.id})] Failed to retrieve image: HTTP {response.status}")
+        except Exception as e:
+            Bot.console("WARN", f"[{ctx.author}({ctx.author.id})] Error in SendImageFromURLAction: {e}")
 
+
+# ======== Utilitaires ========
+def get_unique_filename(base_dir, prefix, extension):
+    """Génère un nom de fichier unique pour éviter les écrasements."""
+    i = 0
+    while True:
+        suffix = f"_{i}" if i > 0 else ""
+        filename = os.path.join(base_dir, f"{prefix}{suffix}.{extension}")
+        if not os.path.exists(filename):
+            return filename
+        i += 1
+
+
+def replace_arguments(content, arguments):
+    """Remplace $1, $2, ... $n dans le contenu avec les arguments fournis."""
+    for i, arg in enumerate(arguments, start=1):
+        content = content.replace(f"${i}", arg)
+    return content
+
+
+def process_secondary(content, ctx):
+    """
+    Traite les actions secondaires imbriquées comme Calc[...] et Copy[...] ainsi que @Mention.
+    On utilise ici re.sub pour améliorer la lisibilité.
+    """
+
+    def calc_repl(match):
+        expr = match.group(1)
+        try:
+            return str(eval(expr))
+        except Exception as e:
+            Bot.console("WARN", f"[{ctx.author}({ctx.author.id})] Erreur lors de l'évaluation de {expr}: {e}")
+            return expr
+
+    def copy_repl(match):
+        text = match.group(1)
+        return f'```{text}```'
+
+    # Traitement de Calc[...] et Copy[...]
+    content = re.sub(r'Calc\[(.*?)\]', calc_repl, content)
+    content = re.sub(r'Copy\[(.*?)\]', copy_repl, content)
+    # Traitement de @Mention
+    content = content.replace("@Mention", ctx.author.mention)
+
+    return content
+
+
+# ======== Action Registry ========
+class ActionRegistry:
+    _actions = {}
+
+    @classmethod
+    def register(cls, name, action_cls):
+        cls._actions[name] = action_cls
+
+    @classmethod
+    def get_action(cls, name):
+        return cls._actions.get(name)
+
+
+# Enregistrement des actions
+ActionRegistry.register("Start", Start)
+ActionRegistry.register("SendMessage", SendMessageAction)
+ActionRegistry.register("GenerateMP3", GenerateMP3Action)
+ActionRegistry.register("CreateRole", CreateRoleAction)
+ActionRegistry.register("SendImage", SendImageFromURLAction)
+ActionRegistry.register("SendEmbed", SendEmbedAction)
+
+
+# ======== Parsing des Actions ========
 def parse_actions(ctx, actions: str):
+    """Analyse une chaîne d'actions et crée des objets Action."""
+    if not actions:
+        return []
+
+    try:
+        args = shlex.split(ctx.message.content)
+        arguments = args[1:]
+    except Exception as e:
+        Bot.console("ERROR", f"[{ctx.author}({ctx.author.id})] Erreur lors du parsing des arguments: {e}")
+        arguments = []
+
     action_list = []
-    if actions is not None:
-        actions = actions.strip()
-    else: return action_list
-    
-    if '}&' in actions:
-        action_strs = actions.split('}&')
-    else:
-        action_strs = [actions]
+    action_strs = actions.split("}&") if "}&" in actions else [actions]
 
-    def check_secondary(content: str):
-        calc_matches = re.findall(r'Calc\[(.*?)\]', content)
-        mention_matches = re.findall(r'@Mention', content)
-        copy_matches = re.findall(r'Copy\[(.*?)\]', content)
-        for calc_expression in calc_matches:
-            try:
-                result = eval(calc_expression)
-                content = content.replace(f'Calc[{calc_expression}]', str(result))
-            except Exception as e:
-                Bot.console("WARN", f"Erreur lors de l'évaluation de {calc_expression}: {e}")
-        for mention in mention_matches:
-            try:
-                content = content.replace(f'@Mention', ctx.author.mention)
-            except Exception as e:
-                Bot.console("WARN", f"Erreur: {e}")
-        for copy in copy_matches:
-            try:
-                content = content.replace(f'Copy[{copy}]', f"```{copy}```")
-            except Exception as e:
-                Bot.console("WARN", f"Erreur: {e}")
-        return content
+    for raw_action in action_strs:
+        action_str = raw_action.rstrip("}") + "}"
+        match = re.fullmatch(r"(\w+)\{(.*)\}", action_str)
+        if match:
+            action_name, params = match.groups()
+            action_cls = ActionRegistry.get_action(action_name)
+            if action_cls:
+                try:
+                    params = replace_arguments(params, arguments)
+                    params = process_secondary(params, ctx)
+                    escaped_delimiter = "__ESCAPED_SEMICOLON__"
+                    params = params.replace(r'\;', escaped_delimiter)
+                    params_split = [p.replace(escaped_delimiter, ';').strip() for p in params.split(";") if p]
+                    action = action_cls(*params_split)
+                    action_list.append(action)
+                except Exception as e:
+                    Bot.console("ERROR", f"[{ctx.author}({ctx.author.id})] Erreur lors de la création de l'action {action_name}: {e}")
+            else:
+                Bot.console("WARN", f"[{ctx.author}({ctx.author.id})] Action inconnue: {action_name}")
+        else:
+            Bot.console("WARN", f"[{ctx.author}({ctx.author.id})] Format d'action invalide: {raw_action}")
 
-    for action_str in action_strs:
-        action_str = action_str + '}'
-        send_message_match = re.match(r'SendMessage\{(.*?)\}', action_str)
-        generate_mp3_match = re.match(r'GenerateMP3\{(.*?)\}', action_str)
-        create_role_match = re.match(r'CreateRole\{(.*?)\}', action_str)
-        send_image_match = re.match(r'SendImage\{(.*?)\}', action_str)
-        if send_message_match:
-            content = send_message_match.group(1)
-            result = check_secondary(content)
-            if result:
-                action_list.append(SendMessageAction(result))
-            else:
-                action_list.append(SendMessageAction(content))
-        elif generate_mp3_match:
-            params = generate_mp3_match.group(1)
-            txt, lg = params.split(";")
-            result = check_secondary(txt)
-            if result:
-                action_list.append(GenerateMP3Action(result, lg))
-            else:
-                action_list.append(GenerateMP3Action(txt, lg))
-        elif create_role_match:
-            params = create_role_match.group(1)
-            name, color = params.split(";")
-            action_list.append(CreateRoleAction(name, color))
-        elif send_image_match:
-            url = send_image_match.group(1)
-            action_list.append(SendImageFromURLAction(url))
-    
     return action_list

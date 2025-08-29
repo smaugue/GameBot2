@@ -12,7 +12,7 @@ from gtts import gTTS
 from random import randint
 from typing import List
 from Packs.automod import AutoMod
-from Packs.Botloader import Data, Bot
+from Packs.Botloader import Data, Bot, Utilitary
 from Packs.version import BOT_VERSION
 
 
@@ -59,21 +59,23 @@ class Common(commands.Cog):
     @commands.hybrid_command(name="sayic", help = f"Permet de fair parler le bot dans un channel définit.")
     @commands.guild_only()
     async def sayInChannel(self, ctx: Context, channel : discord.TextChannel, text):
+        language = Bot.get_language(Data.get_guild_conf(ctx.guild.id, Data.GUILD_LANGUAGE))
         blw, blws = AutoMod.check_message(text)
         if len(blw) != 0:
-            return await ctx.reply("Veuillez surveiller votre langage.")
-        if Data.get_user_conf(ctx.guild.id, ctx.author.id, Data.key['sayic']) != "1":
+            return await ctx.reply(language("bad_language_warning"))
+        if Data.get_user_conf(ctx.guild.id, ctx.author.id, Data.SAYIC) != "1":
             return await Bot.on_refus_interaction(ctx)
         await channel.send(text)
-        await ctx.reply(f"Votre message a bien été envoyé dans #{channel}!")
+        await ctx.reply(language("send_to_channel_success").format(channel=channel))
 
     @commands.hybrid_command(name="say", help = f"Permet de fair parler le bot.")
     @commands.guild_only()
     async def say(self, ctx: Context, text):
+        language = Bot.get_language(Data.get_guild_conf(ctx.guild.id, Data.GUILD_LANGUAGE))
         blw, blws = AutoMod.check_message(text)
         if len(blw) != 0:
-            return await ctx.reply("Veuillez surveiller votre langage.")
-        if Data.get_user_conf(ctx.guild.id, ctx.author.id, Data.key['say']) == "0":
+            return await ctx.reply(language("bad_language_warning"))
+        if Data.get_user_conf(ctx.guild.id, ctx.author.id, Data.SAY) == "0":
             return await Bot.on_refus_interaction(ctx)
         await ctx.send(text)
 
@@ -81,64 +83,72 @@ class Common(commands.Cog):
     @app_commands.autocomplete(lg = lg_autocompletion)
     @commands.guild_only()
     async def vtts(self, ctx: Context, lg, *, text_to_speak: str):
+        if lg == "ar":
+            await ctx.reply("Terrorist language not supported.", ephemeral=True)
+            return
+        language = Bot.get_language(Data.get_guild_conf(ctx.guild.id, Data.GUILD_LANGUAGE))
         blw, blws = AutoMod.check_message(text_to_speak)
         if len(blw) != 0:
-            return await ctx.reply("Veuillez surveiller votre langage.")
-        if Data.get_user_conf(ctx.guild.id, ctx.author.id, Data.key['vtts']) == "0":
+            return await ctx.reply(language("bad_language_warning"))
+        if Data.get_user_conf(ctx.guild.id, ctx.author.id, Data.VTTS) == "0":
             return await Bot.on_refus_interaction(ctx)
         if ctx.voice_client is None:
-            await ctx.send("Le bot n'est pas connecté à un canal vocal. Utilisez !join pour le faire rejoindre un canal vocal.", ephemeral=True)
+            await ctx.send(language("voice_not_connected"), ephemeral=True)
             return
         await ctx.defer()
         try:
             tts = gTTS(text=text_to_speak, lang=lg)
-            tts.save('output.mp3')
-            await Bot.play_audio(ctx,'output.mp3')
+            tts.save('tmp/output.mp3')
+            await Utilitary.play_audio(ctx,'tmp/output.mp3')
             await ctx.reply('Succès.', ephemeral=True)
         except Exception as e:
-            await ctx.reply(f"Une erreur est survenue: {e} \n N'ésitez pas à faire un `/bugreport`")
+            await ctx.reply(f"Error: {e}")
         
     @commands.hybrid_command(name="ftts")
     @app_commands.autocomplete(lg = lg_autocompletion)
     @commands.guild_only()
     async def ftts(self, ctx: Context, lg, text_to_speak: str):
+        language = Bot.get_language(Data.get_guild_conf(ctx.guild.id, Data.GUILD_LANGUAGE))
         blw, blws = AutoMod.check_message(text_to_speak)
         if len(blw) != 0:
-            return await ctx.reply("Veuillez surveiller votre langage.")
-        if Data.get_user_conf(ctx.guild.id, ctx.author.id, Data.key['ftts']) == "0":
+            return await ctx.reply(language("bad_language_warning"))
+        if Data.get_user_conf(ctx.guild.id, ctx.author.id, Data.FTTS) == "0":
             return await Bot.on_refus_interaction(ctx)
         try:
             tts = gTTS(text=text_to_speak, lang=lg)
         except:
-            return await ctx.reply("Nous ne parvenons pas à générer la naration.")
-        tts.save('output.mp3')
+            #clef à revoire
+            return await ctx.reply(language("unpossible_naration"))
+        tts.save('tmp/output.mp3')
         try:
             async with ctx.typing():
-                with open('output.mp3', 'rb') as f:
-                    await ctx.send(file=discord.File(f, filename='output.mp3'))
+                with open('tmp/output.mp3', 'rb') as f:
+                    await ctx.send(file=discord.File(f, filename='tmp/output.mp3'))
         finally:
-            os.remove('output.mp3')
+            os.remove('tmp/output.mp3')
 
         
     @commands.hybrid_command(name = "rdm")
     @commands.guild_only()
     async def randome(self, ctx: Context, min: int, max: int):
-        if Data.get_user_conf(ctx.guild.id, ctx.author.id, Data.key['randome']) == "0":
+        language = Bot.get_language(Data.get_guild_conf(ctx.guild.id, Data.GUILD_LANGUAGE))
+        if Data.get_user_conf(ctx.guild.id, ctx.author.id, Data.RANDOM) == "0":
             return await Bot.on_refus_interaction(ctx)
         try:
             if int(max) > int(min):
                 num = randint(int(min), int(max))
             else:
                 num = randint(int(max), int(min))
-            embed = discord.Embed(title="Random", description=f"Voici un nombre aléatoire entre {min} et {max}")
+            embed = discord.Embed(title="Random", description=language("random_commande_results").format(min=min, max=max))
             embed.set_thumbnail(url="https://media.tenor.com/IfbgWLbg_88AAAAC/dice.gif")
-            embed.add_field(name="Nombre:", value=num, inline=False)
+            embed.add_field(name=language("random_commande_results_number"), value=num, inline=False)
             await ctx.reply(embed=embed)
         except Exception as e:
             Bot.console("ERROR", e)
 
     @commands.hybrid_command(name="uptime")
     async def uptime(self, ctx: commands.Context):
+        await ctx.defer()
         current_time = time.time()
         uptime_seconds = int(current_time - self.start_time)
         uptime_str = self.format_uptime(uptime_seconds)
@@ -152,7 +162,7 @@ class Common(commands.Cog):
             embed.add_field(name="AutoMod API Statut", value=f":green_circle: Online v{api_version}", inline=False)
         else:
             embed.add_field(name="AutoMod API Statut", value=f":red_circle: Offline", inline=False)
-        await ctx.send(embed=embed)
+        await ctx.reply(embed=embed)
 
     def format_uptime(self, seconds):
         minutes, seconds = divmod(seconds, 60)
@@ -160,3 +170,7 @@ class Common(commands.Cog):
         days, hours = divmod(hours, 24)
         
         return f"{days}d {hours}h {minutes}m {seconds}s"
+    
+
+async def setup(bot):
+    await bot.add_cog(Common(bot))

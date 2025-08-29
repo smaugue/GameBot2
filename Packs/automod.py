@@ -42,7 +42,7 @@ class AutoMod:
         data = {'level':level,'message': message}
         headers = {'x-api-key': AutoMod.API_KEY}
         try:
-            response = requests.post(api_url, json=data, headers=headers, timeout=5)
+            response = requests.post(api_url, json=data, headers=headers, timeout=1)
             response.raise_for_status()  # Raise an exception for HTTP errors
         except (ConnectionError, Timeout) as e:
             Bot.console("ERROR", f"Connection error: {e}")
