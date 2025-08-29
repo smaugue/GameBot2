@@ -1,8 +1,0 @@
-2025-08-29 11:16:29 INFO	on_ready: Cog admin.py chargé.
-2025-08-29 11:16:29 INFO	on_ready: Cog common.py chargé.
-2025-08-29 11:16:29 INFO	on_ready: Cog learning.py chargé.
-2025-08-29 11:16:29 INFO	on_ready: Cog music.py chargé.
-2025-08-29 11:16:29 INFO	on_ready: Cog test.py chargé.
-2025-08-29 11:16:29 INFO	on_ready: Logged in as GameHube_France#4961 (ID: 1124045106551455754)
-2025-08-29 11:16:29 INFO	versions: Logged in V2.0.1.0
-2025-08-29 11:16:30 INFO	on_ready: Synced 26 slash commands

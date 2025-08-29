@@ -306,7 +306,9 @@ class Bot:
     @staticmethod
     def logs(data):
         try:
-            with open("logs/logs.txt", "a+", encoding="utf-8") as logs_file:
+            now = datetime.now(tz)
+            startDate = now.strftime('%Y-%m-%d')
+            with open(f"logs/{startDate}.log", "a+", encoding="utf-8") as logs_file:
                 logs_file.write(data + "\n")
         except Exception as e:
             Bot.console("ERROR", f"Log impossible: {e}", False)

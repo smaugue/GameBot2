@@ -1,6 +1,7 @@
 #format: Vproject,cog,commande&traduction,patch
-VERSION = "2.0.1.1"
+VERSION = "2.0.1.2"
 DATE = "29/08/2025"
-PATCH = "Correction des traductions manquantes/érronnées.\nCorrection des bouttons de la Cog Admin.\nRévison du système d'update et du launcher."
+PATCH = "Les logs sont désormais dans un fichier .log à la place de .txt."
+OLD0.1.1 = "Correction des traductions manquantes/érronnées.\nCorrection des bouttons de la Cog Admin.\nRévison du système d'update et du launcher."
 OLD0.1.0 = "Poursuite de la traduction des Cogs, Admin et Common entièrement traduites.\nOptimisation de l'Iterpretor."
 OLD0.0.0 = "Initialisation du Project\nNouvelles fonctionnalité par rapport à la 1.5.4:\n-Ajout du support des langue(fr/en) limité (En partie uniquement, fichier principale + Cog Admin + Cog Common).\n-Les Autres Cogs reviennent sous peut."
