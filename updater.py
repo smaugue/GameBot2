@@ -48,7 +48,7 @@ def get_local_version():
     try:
         with open("Version", encoding='utf-8') as f:
             for line in f:
-                if "VERSION" in line:
+                if "VERSION = " in line:
                     return tuple(map(int, line.split("=")[1].strip().replace('"', '').replace("'", "").split(".")))
     except FileNotFoundError:
         print("⚠️ Fichier 'Version' introuvable.")
