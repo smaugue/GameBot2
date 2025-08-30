@@ -19,12 +19,13 @@ Format : Vproject.cog.commande&traduction.patch
    - Exemple : 2.0.1.1 → 2.0.1.2
 """
 
-VERSION = "2.2.0.1"
+VERSION = "2.2.0.2"
 DATE = "30/08/2025"
-LAST_CHANGE = "Annulation de certaines modifications du versionning."
+LAST_CHANGE = "Retrait de la suppression de fichier dans `vtts` qui est déjà supporté par la class `Utilitary`."
 
 OLD_VERSIONS = {
-    "2.2.0.0": ""- Ajout d’un pack `Utilitary` centralisant la génération TTS (évite doublons).\n"- Préparation de la nouvelle `Cog Audio` (join/leave séparée des commandes `play`(ancienne Cog Music)).\n-Révision du système de versionning.""
+    "2.2.0.1": "Annulation de certaines modifications du versionning."
+    "2.2.0.0": "- Ajout d’un pack `Utilitary` centralisant la génération TTS (évite doublons).\n"- Préparation de la nouvelle `Cog Audio` (join/leave séparée des commandes `play`(ancienne Cog Music)).\n-Révision du système de versionning."
     "2.1.0.1": "Les logs sont désormais dans un fichier .log à la place de .txt.",
     "2.1.0.0": "Correction des traductions manquantes/érronnées.\nCorrection des bouttons de la Cog Admin.\nRévison du système d'update et du launcher.",
     "2.0.1.0": "Poursuite de la traduction des Cogs, Admin et Common entièrement traduites.\nOptimisation de l'Iterpretor.",

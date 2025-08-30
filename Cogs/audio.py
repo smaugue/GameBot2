@@ -21,7 +21,7 @@ class Audio(commands.Cog):
                 await ctx.voice_client.move_to(channel)
                 return await ctx.reply(f"🔄 Déplacé dans {channel.mention}")
 
-        await channel.connect(self_deaf=True)  # se mute côté sortie
+        await channel.connect(self_deaf=False)  # se mute côté sortie (à True mais debugage en cours)
         await ctx.reply(f"✅ Connecté à {channel.mention}")
 
     # --- Leave ---

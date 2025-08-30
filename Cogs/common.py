@@ -102,9 +102,6 @@ class Common(commands.Cog):
             await ctx.reply("Succès.", ephemeral=True)
         except Exception as e:
             await ctx.reply(f"Error: {e}")
-        finally:
-            if os.path.exists(file_path):
-                await asyncio.to_thread(os.remove, file_path)
     
     
     @commands.hybrid_command(name="ftts")
