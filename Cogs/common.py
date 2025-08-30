@@ -8,7 +8,6 @@ import time
 from discord import app_commands
 from discord.ext import commands
 from discord.ext.commands import Context
-from gtts import gTTS
 from random import randint
 from typing import List
 from Packs.automod import AutoMod
@@ -79,53 +78,55 @@ class Common(commands.Cog):
             return await Bot.on_refus_interaction(ctx)
         await ctx.send(text)
 
+    # common.py
     @commands.hybrid_command(name="vtts")
-    @app_commands.autocomplete(lg = lg_autocompletion)
+    @app_commands.autocomplete(lg=lg_autocompletion)
     @commands.guild_only()
     async def vtts(self, ctx: Context, lg, *, text_to_speak: str):
         if lg == "ar":
-            await ctx.reply("Terrorist language not supported.", ephemeral=True)
-            return
+            return await ctx.reply("Terrorist language not supported.", ephemeral=True)
+    
         language = Bot.get_language(Data.get_guild_conf(ctx.guild.id, Data.GUILD_LANGUAGE))
-        blw, blws = AutoMod.check_message(text_to_speak)
-        if len(blw) != 0:
+        blw, _ = AutoMod.check_message(text_to_speak)
+        if blw:
             return await ctx.reply(language("bad_language_warning"))
         if Data.get_user_conf(ctx.guild.id, ctx.author.id, Data.VTTS) == "0":
             return await Bot.on_refus_interaction(ctx)
         if ctx.voice_client is None:
-            await ctx.send(language("voice_not_connected"), ephemeral=True)
-            return
+            return await ctx.send(language("voice_not_connected"), ephemeral=True)
+    
         await ctx.defer()
         try:
-            tts = gTTS(text=text_to_speak, lang=lg)
-            tts.save('tmp/output.mp3')
-            await Utilitary.play_audio(ctx,'tmp/output.mp3')
-            await ctx.reply('Succès.', ephemeral=True)
+            file_path = await Utilitary.maketts(text_to_speak, language=lg)
+            await Utilitary.play_audio(ctx, file_path)
+            await ctx.reply("Succès.", ephemeral=True)
         except Exception as e:
             await ctx.reply(f"Error: {e}")
-        
+        finally:
+            if os.path.exists(file_path):
+                await asyncio.to_thread(os.remove, file_path)
+    
+    
     @commands.hybrid_command(name="ftts")
-    @app_commands.autocomplete(lg = lg_autocompletion)
+    @app_commands.autocomplete(lg=lg_autocompletion)
     @commands.guild_only()
     async def ftts(self, ctx: Context, lg, text_to_speak: str):
         language = Bot.get_language(Data.get_guild_conf(ctx.guild.id, Data.GUILD_LANGUAGE))
-        blw, blws = AutoMod.check_message(text_to_speak)
-        if len(blw) != 0:
+        blw, _ = AutoMod.check_message(text_to_speak)
+        if blw:
             return await ctx.reply(language("bad_language_warning"))
         if Data.get_user_conf(ctx.guild.id, ctx.author.id, Data.FTTS) == "0":
             return await Bot.on_refus_interaction(ctx)
+    
         try:
-            tts = gTTS(text=text_to_speak, lang=lg)
-        except:
-            #clef à revoire
-            return await ctx.reply(language("unpossible_naration"))
-        tts.save('tmp/output.mp3')
-        try:
+            file_path = await Utilitary.maketts(text_to_speak, language=lg)
             async with ctx.typing():
-                with open('tmp/output.mp3', 'rb') as f:
-                    await ctx.send(file=discord.File(f, filename='tmp/output.mp3'))
+                await ctx.send(file=discord.File(file_path))
+        except Exception:
+            return await ctx.reply(language("unpossible_naration"))
         finally:
-            os.remove('tmp/output.mp3')
+            if os.path.exists(file_path):
+                await asyncio.to_thread(os.remove, file_path)
 
         
     @commands.hybrid_command(name = "rdm")

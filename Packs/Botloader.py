@@ -388,14 +388,38 @@ class YTDV3:
     api_key = Conf.config_vars.get("youtube_api_key")
 
 
+TMP_DIR = "tmp"
+
+def get_unique_filename(directory, base_name, extension):
+    """Retourne un chemin unique pour un fichier dans un dossier donné."""
+    counter = 0
+    while True:
+        filename = f"{base_name}{'' if counter == 0 else f'_{counter}'}.{extension}"
+        filepath = os.path.join(directory, filename)
+        if not os.path.exists(filepath):
+            return filepath
+        counter += 1
+
+
 class Utilitary:
 
     @staticmethod
-    def maketts(text, langage="fr", name="output.mp3"):
-        tts_instance = gTTS(text, lang=langage)
-        file_path = os.path.join("tmp", name)
-        tts_instance.save(file_path)
+    async def maketts(text: str, language: str = "fr", name: str | None = None) -> str:
+        """
+        Génère un fichier TTS en mp3 et retourne son chemin.
+        Si name est None → génère un nom unique basé sur timestamp et user.
+        """
+        os.makedirs(TMP_DIR, exist_ok=True)
+        if name:
+            file_path = os.path.join(TMP_DIR, name)
+        else:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            file_path = get_unique_filename(TMP_DIR, f"tts_{timestamp}", "mp3")
+
+        tts_instance = gTTS(text, lang=language)
+        await asyncio.to_thread(tts_instance.save, file_path)
         return file_path
+    
     
     queue = deque()
 

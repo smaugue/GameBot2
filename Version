@@ -1,7 +1,39 @@
-#format: Vproject,cog,commande&traduction,patch
-VERSION = "2.0.1.2"
-DATE = "29/08/2025"
-PATCH = "Les logs sont désormais dans un fichier .log à la place de .txt."
-OLD0.1.1 = "Correction des traductions manquantes/érronnées.\nCorrection des bouttons de la Cog Admin.\nRévison du système d'update et du launcher."
-OLD0.1.0 = "Poursuite de la traduction des Cogs, Admin et Common entièrement traduites.\nOptimisation de l'Iterpretor."
-OLD0.0.0 = "Initialisation du Project\nNouvelles fonctionnalité par rapport à la 1.5.4:\n-Ajout du support des langue(fr/en) limité (En partie uniquement, fichier principale + Cog Admin + Cog Common).\n-Les Autres Cogs reviennent sous peut."
+"""
+=============================
+ GUIDE DE VERSIONNEMENT
+=============================
+Format : Vproject.cog.commande&traduction.patch
+
+1. Vproject (ex: 2) :
+   - Réécriture complète ou reset du projet.
+   - Exemple : 1.x.x.x → 2.0.0.0
+
+2. Cog (ex: 0) :
+   - Ajout ou modification majeure d’un système (nouvelle cog, refonte importante).
+   - Exemple : 2.0.x.x → 2.1.0.0
+
+3. Commande&Traduction (ex: 1) :
+   - Ajout/amélioration de fonctionnalités dans une cog existante,
+     ou progression dans la traduction.
+   - Exemple : 2.0.1.x → 2.0.2.0
+
+4. Patch (ex: 2) :
+   - Correction de bugs, petites optimisations, ajustements mineurs.
+   - Exemple : 2.0.1.1 → 2.0.1.2
+"""
+
+VERSION = "2.2.0.0"
+DATE = "30/08/2025"
+LAST_CHANGE = (
+    "Refactor global :\n"
+    "- Ajout d’un pack `Utilitary` centralisant la génération TTS (évite doublons).\n"
+    "- Préparation de la nouvelle `Cog Audio` (join/leave séparée des commandes `play`(ancienne Cog Music)).\n"
+    "-Révision du système de versionning."
+)
+
+OLD_VERSIONS = {
+    "2.1.0.1": "Les logs sont désormais dans un fichier .log à la place de .txt.",
+    "2.1.0.0": "Correction des traductions manquantes/érronnées.\nCorrection des bouttons de la Cog Admin.\nRévison du système d'update et du launcher.",
+    "2.0.1.0": "Poursuite de la traduction des Cogs, Admin et Common entièrement traduites.\nOptimisation de l'Iterpretor.",
+    "2.0.0.0": "Initialisation du Project\nNouvelles fonctionnalités par rapport à la 1.5.4:\n- Ajout du support des langues (fr/en) limité (en partie uniquement, fichier principal + Cog Admin + Cog Common).\n- Les autres Cogs reviennent sous peu."
+}

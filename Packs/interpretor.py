@@ -5,9 +5,8 @@ import aiofiles
 import aiohttp
 import re
 from datetime import datetime
-from gtts import gTTS
 from abc import ABC, abstractmethod
-from Packs.Botloader import Bot
+from Packs.Botloader import Bot, Utilitary
 import asyncio
 
 # Répertoire temporaire pour les fichiers
@@ -51,25 +50,23 @@ class SendMessageAction(Action):
         Bot.console("INFO", f"[{ctx.author}({ctx.author.id})] Message sent: {self.content}")
 
 
+# interpreter.py
 class GenerateMP3Action(Action):
     def __init__(self, text, lang="fr"):
         self.text = text
         self.lang = lang
 
     async def execute(self, ctx):
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        output_filename = get_unique_filename(TMP_DIR, f"{ctx.author.id}_{timestamp}_output", "mp3")
         try:
-            # Utilisation de gTTS de manière asynchrone
-            tts = gTTS(text=self.text, lang=self.lang)
-            await asyncio.to_thread(tts.save, output_filename)  # Sauvegarde dans un thread pour éviter le blocage
-            await ctx.send(file=discord.File(output_filename))
-            Bot.console("INFO", f"[{ctx.author}({ctx.author.id})] MP3 generated and sent: {output_filename} [{self.text}]")
+            file_path = await Utilitary.maketts(self.text, self.lang)
+            await ctx.send(file=discord.File(file_path))
+            Bot.console("INFO", f"[{ctx.author}({ctx.author.id})] MP3 generated and sent: {file_path} [{self.text}]")
         except Exception as e:
             Bot.console("WARN", f"[{ctx.author}({ctx.author.id})] Error generating MP3: {e}")
         finally:
-            # Assurer une suppression propre du fichier
-            await asyncio.to_thread(os.remove, output_filename)
+            if os.path.exists(file_path):
+                await asyncio.to_thread(os.remove, file_path)
+
 
 
 class CreateRoleAction(Action):

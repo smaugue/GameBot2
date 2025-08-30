@@ -80,8 +80,9 @@ class BotClient(commands.Bot):
 
     async def versions(self, type, ctx: Context):
         patch = None
+        date, patch = Version.get_patch()
         if type == "on_ready":
-            return Bot.console("INFO", f'Logged in V{BOT_VERSION}')
+            return Bot.console("INFO", f'Logged in V{BOT_VERSION} ({date})')
 
         check = Version.check()
         # Cache de la langue pour éviter des appels répétés en mémoire
@@ -89,13 +90,10 @@ class BotClient(commands.Bot):
 
         if check == "j":
             description, color, url = language("version_j_description"), discord.Colour.green(), "https://cdn3.emoji.gg/emojis/2990_yes.png"
-            date, patch = Version.get_patch()
         elif check == "o":
             description, color, url = language("version_o_description"), discord.Colour.from_rgb(250, 0, 0), "https://cdn3.emoji.gg/emojis/1465-x.png"
-            date, patch = Version.get_patch()
         else:
             description, color, url = language("version_b_description"), discord.Colour.orange(), "https://cdn3.emoji.gg/emojis/3235_warning2.png"
-            date, patch = Version.get_patch()
         if type == "commande":
             embed = discord.Embed(title=language("version_maj_note"), description=description, color=color)
             embed.set_thumbnail(url=url)
