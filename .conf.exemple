@@ -3,7 +3,7 @@ repo_owner = owner
 repo_name = reposit
 branch_name = main
 #don't remove
-ignore_files = updater.py .gitattributes .gitignore .conf
+ignore_files = .gitattributes .gitignore .conf
 
 # AutoModAPI
 #API code soon available on my github

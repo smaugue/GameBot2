@@ -31,7 +31,6 @@ import json
 from gtts import gTTS
 from datetime import datetime
 from collections import deque
-from enum import Enum
 
 __path__ = os.path.dirname(os.path.abspath(__file__))
 tz = pytz.timezone('Europe/Paris')
@@ -296,6 +295,8 @@ class Bot:
         Bot.BugReportChannel = Conf.config_vars.get(f"{launched_bot}_bugreport_channel")
         Bot.Prefix = Conf.config_vars.get(f"{launched_bot}_prefix")
         Bot.Database = Data(f"{Bot.Name}.db")
+        Bot.Restart = "n"   # par défaut pas de redémarrage
+        Bot.Update = ""
     
     def get_token(self, token):
         # Optimisation de la décryption du token avec une compréhension de liste

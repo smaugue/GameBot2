@@ -12,7 +12,7 @@ from random import randint
 from typing import List
 from Packs.automod import AutoMod
 from Packs.Botloader import Data, Bot, Utilitary
-from Packs.version import BOT_VERSION
+from Packs.version import Version, BOT_VERSION
 
 
 class Common(commands.Cog):
@@ -143,6 +143,29 @@ class Common(commands.Cog):
             await ctx.reply(embed=embed)
         except Exception as e:
             Bot.console("ERROR", e)
+
+    @commands.hybrid_command(name="version", help="Version et notes de mise à jour.")
+    async def version(self, ctx: Context):
+        patch = None
+        date, patch = Version.get_patch()
+        check = Version.check()
+        language = Bot.get_language(Data.get_guild_conf(ctx.guild.id, Data.GUILD_LANGUAGE))
+
+        if check == "j":
+            description, color, url = language("version_j_description"), discord.Colour.green(), "https://cdn3.emoji.gg/emojis/2990_yes.png"
+        elif check == "o":
+            description, color, url = language("version_o_description"), discord.Colour.from_rgb(250, 0, 0), "https://cdn3.emoji.gg/emojis/1465-x.png"
+        else:
+            description, color, url = language("version_b_description"), discord.Colour.orange(), "https://cdn3.emoji.gg/emojis/3235_warning2.png"
+
+        embed = discord.Embed(title=language("version_maj_note"), description=description, color=color)
+        embed.set_thumbnail(url=url)
+        embed.add_field(name=language("version_bot"), value=BOT_VERSION, inline=False)
+        embed.add_field(name=language("version_laster"), value=Version.LASTER_VERSION, inline=False)
+        if patch:
+            embed.add_field(name=language("version_patch_note", date=date), value=patch, inline=False)
+        await ctx.reply(embed=embed)
+
 
     @commands.hybrid_command(name="uptime")
     async def uptime(self, ctx: commands.Context):

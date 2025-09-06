@@ -40,13 +40,19 @@ class LoggingHandler(commands.Cog):
     # === Events liés aux commandes === #
     @commands.Cog.listener()
     async def on_command(self, ctx: Context):
-        if isinstance(ctx.command, commands.HybridCommand) and ctx.interaction is not None:
-            return  # doublon évité
+        # Si c’est une commande hybride exécutée en slash,
+        # ctx.interaction sera NON NULL → on laisse l’autre event gérer
+        if ctx.interaction is not None:
+            return  
+    
+        # Sinon (commande prefix pure ou hybride en prefix) → on log ici
         await self.log_command(ctx, ctx.command.qualified_name)
-
+    
     @commands.Cog.listener()
     async def on_app_command_completion(self, interaction: discord.Interaction, command: discord.app_commands.Command):
+        # Ne logge que les vrais slash / hybrides exécutés en slash
         await self.log_command(interaction, command.name)
+
 
     # === Gestion des erreurs globales === #
     @commands.Cog.listener()
