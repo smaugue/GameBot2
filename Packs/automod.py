@@ -33,8 +33,7 @@ class AutoMod:
     API_PORT = Conf.config_vars.get("api_port")
 
     url = f"http://{API_URL}:{API_PORT}"
-    print(url)
-
+    
     def check_message(message: str,*,level = 3):
         bw = {}
         bws = {}

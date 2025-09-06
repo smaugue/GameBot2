@@ -15,11 +15,14 @@ def get_version():
     for line in lines:
         if "VERSION" in line:
             v, u, p, c = line.split("=")[1].strip().replace('"', '').replace("'", "").split(".")
-            return int(v), int(u), int(p), int(c)
+        if "DATE" in line:
+            date = line.split("=")[1].strip().replace('"', '').replace("'", "")
+    return int(v), int(u), int(p), int(c), date
 
-v,u,p,c = get_version()
+v,u,p,c, date = get_version()
 
 BOT_VERSION = f"{v}.{u}.{p}.{c}"
+BOT_VERSION_DATE = date
 
 class Version:
 
