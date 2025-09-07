@@ -19,11 +19,12 @@ Format : Vproject.cog.commande&traduction.patch
    - Exemple : 2.0.1.1 → 2.0.1.2
 """
 
-VERSION = "2.4.0.0"
-DATE = "6/09/2025"
-LAST_CHANGE = "Réactivation de la Cog `Owner`. Création de la Cog `Message_handler` pour remplacer la fonction on message du `bot.py`. Le `bot.py` ne gère plus que le chargemùent des cog déplacement de `version` dans `Common` et `restart` dans `Owner`."
+VERSION = "2.4.0.1"
+DATE = "7/09/2025"
+LAST_CHANGE = "Révision du calcule du boot time."
 
 OLD = {
+   "2.4.0.0": "Réactivation de la Cog `Owner`. Création de la Cog `Message_handler` pour remplacer la fonction on message du `bot.py`. Le `bot.py` ne gère plus que le chargemùent des cog déplacement de `version` dans `Common` et `restart` dans `Owner`."
    "2.3.0.0": "Création des Cogs `interaction_handler` et `logging_handler`, respectivement pour la gestion des interactions et pour le logging des erreurs ainsi que l’exécution des commandes. Suppression des fonctions qui assuraient auparavant ces rôles dans `bot.py`."
     "2.2.0.2": "Retrait de la suppression de fichier dans `vtts` qui est déjà supporté par la class `Utilitary`."
     "2.2.0.1": "Annulation de certaines modifications du versionning."

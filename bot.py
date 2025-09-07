@@ -11,12 +11,14 @@ from Packs.Botloader import Bot
 
 import time
 import functools
-#from Packs.Botloader import Bot
+
+# Ajout : temps de départ du script
+SCRIPT_START_TIME = time.perf_counter()
+
 
 def measure_boot_time(func):
     """
-    Décorateur pour mesurer le temps de boot du bot.
-    Affiche le temps écoulé entre le début et la fin de la fonction décorée.
+    Décorateur pour mesurer le temps de boot du bot (uniquement on_ready).
     """
     @functools.wraps(func)
     async def boot(*args, **kwargs):
@@ -24,7 +26,7 @@ def measure_boot_time(func):
         result = await func(*args, **kwargs)
         end = time.perf_counter()
         elapsed = end - start
-        Bot.console("INFO", f"Temps de boot : {elapsed:.2f} secondes")
+        Bot.console("INFO", f"Temps de boot (on_ready): {elapsed:.2f} secondes")
         return result
     return boot
 
@@ -44,7 +46,6 @@ class BotClient(commands.Bot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    @measure_boot_time
     async def on_ready(self):
         await self.change_presence(
             status=discord.Status.online,
@@ -68,6 +69,10 @@ class BotClient(commands.Bot):
             Bot.console("INFO", f'Synced {len(synced)} slash commands')
         except Exception as e:
             Bot.console("ERROR", f'Error syncing slash commands: {e}')
+
+        # Temps total depuis le lancement du script
+        total_elapsed = time.perf_counter() - SCRIPT_START_TIME
+        Bot.console("INFO", f"Temps de boot : {total_elapsed:.2f} secondes")
 
         Bot.console("INFO", "Bot is ready.")
         await self.change_presence(

@@ -2,7 +2,7 @@
 # Voir : https://creativecommons.org/licenses/by-nc-sa/4.0/
 
 import discord
-from Packs.Botloader import owner_permission, Data, Bot
+from Packs.Botloader import owner_permission, Bot
 import asyncio
 from discord.ext import commands
 from discord.ext.commands import Context
