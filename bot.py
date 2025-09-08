@@ -96,16 +96,11 @@ try:
 except:
     print("Bad Password")
 
-args = [
+os.execv(sys.executable, [
     sys.executable,
     "Launcher/launcher.py",
     "--bot", Bot.Name,
     "--restart", Bot.Restart,
-    "--pasword", Bot.Pasword
-]
-
-if Bot.Update:
-    args.append(Bot.Update)
-
-subprocess.Popen(args)
-sys.exit(0)  # tue le process courant
+    "--pasword", Bot.Pasword,
+    Bot.Update or ""
+])
