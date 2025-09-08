@@ -11,6 +11,7 @@ from Packs.Botloader import Bot
 
 import time
 import functools
+import subprocess
 import sys
 
 # Ajout : temps de départ du script
@@ -95,8 +96,7 @@ try:
 except:
     print("Bad Password")
 
-# Remplace os.system par execv
-os.execv(sys.executable, [
+subprocess.Popen([
     sys.executable,
     "Launcher/launcher.py",
     "--bot", Bot.Name,
@@ -104,3 +104,4 @@ os.execv(sys.executable, [
     "--pasword", Bot.Pasword,
     Bot.Update
 ])
+sys.exit(0)
