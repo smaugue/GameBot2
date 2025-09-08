@@ -11,6 +11,7 @@ from Packs.Botloader import Bot
 
 import time
 import functools
+import sys
 
 # Ajout : temps de départ du script
 SCRIPT_START_TIME = time.perf_counter()
@@ -93,4 +94,13 @@ try:
     bot.run(Bot.Token)
 except:
     print("Bad Password")
-os.system(f"python Launcher.py --bot {Bot.Name} --restart {Bot.Restart} --pasword {Bot.Pasword} {Bot.Update}")
+
+# Remplace os.system par execv
+os.execv(sys.executable, [
+    sys.executable,
+    "Launcher/launcher.py",
+    "--bot", Bot.Name,
+    "--restart", Bot.Restart,
+    "--pasword", Bot.Pasword,
+    Bot.Update
+])
