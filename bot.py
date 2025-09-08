@@ -95,12 +95,5 @@ try:
     bot.run(Bot.Token)
 except:
     print("Bad Password")
-
-os.execv(sys.executable, [
-    sys.executable,
-    "Launcher/launcher.py",
-    "--bot", Bot.Name,
-    "--restart", Bot.Restart,
-    "--pasword", Bot.Pasword,
-    Bot.Update or ""
-])
+os.system(f"python Launcher.py --bot {Bot.Name} --restart {Bot.Restart} --pasword {Bot.Pasword} {Bot.Update}")
+os._exit(0)
