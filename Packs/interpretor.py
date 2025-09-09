@@ -40,6 +40,27 @@ class SendEmbedAction(Action):
 
     # Pas de lourdes opérations réseau ou fichiers donc très léger
 
+class OsuPlayerData(Action):
+    def __init__(self, username):
+        self.username = username
+
+    async def execute(self, ctx):
+        try:
+            data = await Utilitary.get_osu_player_data(self.username)
+            if data:
+                embed = discord.Embed(title=f"Osu! Player: {data['username']}", color=discord.Color.purple())
+                embed.add_field(name="PP", value=data['pp'], inline=True)
+                embed.add_field(name="Rank", value=data['rank'], inline=True)
+                embed.add_field(name="Country Rank", value=data['country_rank'], inline=True)
+                embed.add_field(name="Level", value=data['level'], inline=True)
+                embed.set_thumbnail(url=data['avatar_url'])
+                await ctx.send(embed=embed)
+                Bot.console("INFO", f"[{ctx.author}({ctx.author.id})] Osu! data sent for user: {self.username}")
+            else:
+                await ctx.send(f"No data found for user: {self.username}")
+                Bot.console("WARN", f"[{ctx.author}({ctx.author.id})] No Osu! data for user: {self.username}")
+        except Exception as e:
+            Bot.console("WARN", f"[{ctx.author}({ctx.author.id})] Error fetching Osu! data for {self.username}: {e}")
 
 class SendMessageAction(Action):
     def __init__(self, content):
@@ -175,6 +196,7 @@ ActionRegistry.register("GenerateMP3", GenerateMP3Action)
 ActionRegistry.register("CreateRole", CreateRoleAction)
 ActionRegistry.register("SendImage", SendImageFromURLAction)
 ActionRegistry.register("SendEmbed", SendEmbedAction)
+ActionRegistry.register("OsuPlayerData", OsuPlayerData)
 
 
 # ======== Parsing des Actions ========

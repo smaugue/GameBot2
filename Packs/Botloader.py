@@ -28,6 +28,7 @@ import inspect
 import sqlite3
 import pytz
 import json
+import requests
 from gtts import gTTS
 from datetime import datetime
 from collections import deque
@@ -388,6 +389,10 @@ class Reposit:
 class YTDV3:
     api_key = Conf.config_vars.get("youtube_api_key")
 
+class OsuAPI:
+    client_id = Conf.config_vars.get("osu_client_id")
+    client_secret = Conf.config_vars.get("osu_client_secret")
+
 
 TMP_DIR = "tmp"
 
@@ -442,3 +447,40 @@ class Utilitary:
         if Utilitary.queue:
             next_ctx, next_file = Utilitary.queue.popleft()
             asyncio.run_coroutine_threadsafe(Utilitary.play_audio(next_ctx, next_file), ctx.bot.loop)
+
+    @staticmethod
+    def get_osu_user(username: str):
+        """
+        Récupère les données d'un joueur osu! en utilisant l'API v2.
+
+        :param username: Pseudo du joueur
+        :param client_id: Ton client_id de l'API osu!
+        :param client_secret: Ton client_secret de l'API osu!
+        :return: Dictionnaire avec les données du joueur ou None si erreur
+        """
+
+        # Étape 1 : obtenir un token OAuth2
+        token_url = "https://osu.ppy.sh/oauth/token"
+        data = {
+            "client_id": OsuAPI.client_id,
+            "client_secret": OsuAPI.client_secret,
+            "grant_type": "client_credentials",
+            "scope": "public"
+        }
+        token_response = requests.post(token_url, data=data)
+        if token_response.status_code != 200:
+            print("Erreur lors de la récupération du token :", token_response.text)
+            return None
+
+        access_token = token_response.json()["access_token"]
+
+        # Étape 2 : appeler l'API osu pour récupérer les infos du joueur
+        user_url = f"https://osu.ppy.sh/api/v2/users/{username}/osu"
+        headers = {"Authorization": f"Bearer {access_token}"}
+        user_response = requests.get(user_url, headers=headers)
+
+        if user_response.status_code != 200:
+            print("Erreur lors de la récupération des données joueur :", user_response.text)
+            return None
+
+        return user_response.json()

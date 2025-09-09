@@ -173,7 +173,7 @@ class Admin(commands.Cog):
                 self.message_button_disabled = False
                 self.image_button_disabled = False
                 self.ok_button_disabled = False
-
+ 
             @discord.ui.button(style=discord.ButtonStyle.blurple, label="Script", custom_id="script")
             async def script_button(self, button: discord.ui.Button, interaction: discord.Interaction):
                 button, interaction = interaction, button  # Correction de l'ordre des paramètres
@@ -181,20 +181,22 @@ class Admin(commands.Cog):
                     self.script_button_disabled = True
                     button.disabled = True
                     await interaction.response.edit_message(embed=self.embed, view=self)
-                    prompt = await interaction.channel.send(language("message_prompt").format(user=interaction.user.mention))
+                    prompt = await interaction.channel.send(language("script_prompt").format(user=interaction.user.mention))
                     try:
                         user_message = await self.bot.wait_for(
                             "message",
                             timeout=60,
                             check=lambda m: m.author == interaction.user and m.channel == interaction.channel
                         )
-                        self.embed.add_field(name=language("message_label"), value=user_message.content, inline=False)
+                        self.embed.add_field(name=language("script_label"), value=user_message.content, inline=False)
                         self.executore += f"&{user_message.content}"
                         await interaction.edit_original_response(embed=self.embed, view=self)
                         await user_message.delete()
                         await prompt.delete()
                     except asyncio.TimeoutError:
                         await interaction.followup.send(language("timeout_message"))
+            
+            
 
             @discord.ui.button(style=discord.ButtonStyle.blurple, label=language("send_message_button"), custom_id="message")
             async def send_message_button(self, button: discord.ui.Button, interaction: discord.Interaction):
